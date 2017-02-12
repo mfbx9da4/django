@@ -11,6 +11,7 @@ import threading
 import time
 import unittest
 import warnings
+from contextlib import suppress
 from unittest import mock
 
 from django.conf import settings
@@ -1223,6 +1224,7 @@ class BaseMemcachedTests(BaseCacheTests):
             # was deleted, so the return/exception behavior for the set()
             # itself is not important.
             pass
+
         # small_value should be deleted, or set if configured to accept larger values
         value = cache.get('small_value')
         self.assertTrue(value is None or value == large_value)

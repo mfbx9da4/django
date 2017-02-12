@@ -1,4 +1,5 @@
 import os
+from contextlib import suppress
 from datetime import datetime
 from urllib.parse import urljoin
 
@@ -225,7 +226,10 @@ class FileSystemStorage(Storage):
         # Create any intermediate directories that do not exist.
         directory = os.path.dirname(full_path)
         if not os.path.exists(directory):
-            try:
+            # There's a race between os.path.exists() and os.makedirs().
+            # If os.makedirs() fails with FileNotFoundError, the directory
+            # was created concurrently.
+            with suppress(FileNotFoundError):
                 if self.directory_permissions_mode is not None:
                     # os.makedirs applies the global umask, so we reset it,
                     # for consistency with file_permissions_mode behavior.
@@ -236,11 +240,6 @@ class FileSystemStorage(Storage):
                         os.umask(old_umask)
                 else:
                     os.makedirs(directory)
-            except FileNotFoundError:
-                # There's a race between os.path.exists() and os.makedirs().
-                # If os.makedirs() fails with FileNotFoundError, the directory
-                # was created concurrently.
-                pass
         if not os.path.isdir(directory):
             raise IOError("%s exists and is not a directory." % directory)
 
@@ -296,12 +295,10 @@ class FileSystemStorage(Storage):
         assert name, "The name argument is not allowed to be empty."
         name = self.path(name)
         # If the file exists, delete it from the filesystem.
-        try:
-            os.remove(name)
-        except FileNotFoundError:
+        with suppress(FileNotFoundError):
             # If os.remove() fails with FileNotFoundError, the file may have
             # been removed concurrently.
-            pass
+            os.remove(name)
 
     def exists(self, name):
         return os.path.exists(self.path(name))

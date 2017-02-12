@@ -1,4 +1,5 @@
 from collections import defaultdict
+from contextlib import suppress
 
 from django.contrib.gis import forms, gdal
 from django.contrib.gis.db.models.lookups import (
@@ -189,10 +190,8 @@ class BaseSpatialField(Field):
         if isinstance(value, gdal.GDALRaster):
             return value
         elif is_candidate:
-            try:
+            with suppress(GDALException):
                 return gdal.GDALRaster(value)
-            except GDALException:
-                pass
         elif isinstance(value, dict):
             try:
                 return gdal.GDALRaster(value)
@@ -444,4 +443,5 @@ class RasterField(BaseSpatialField):
             )
         except ValueError:
             pass
-        return super().get_transform(name)
+        else:
+            return super().get_transform(name)

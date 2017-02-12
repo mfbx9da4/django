@@ -1,5 +1,6 @@
 import os
 import subprocess
+from contextlib import suppress
 
 from django.core.files.temp import NamedTemporaryFile
 from django.db.backends.base.client import BaseDatabaseClient
@@ -38,7 +39,9 @@ class DatabaseClient(BaseDatabaseClient):
             if passwd:
                 # Create temporary .pgpass file.
                 temp_pgpass = NamedTemporaryFile(mode='w+')
-                try:
+                # If the current locale can't encode the data, let
+                # the user input the password manually.
+                with suppress(UnicodeEncodeError):
                     print(
                         _escape_pgpass(host) or '*',
                         str(port) or '*',
@@ -50,10 +53,6 @@ class DatabaseClient(BaseDatabaseClient):
                         flush=True,
                     )
                     os.environ['PGPASSFILE'] = temp_pgpass.name
-                except UnicodeEncodeError:
-                    # If the current locale can't encode the data, we let
-                    # the user input the password manually.
-                    pass
             subprocess.check_call(args)
         finally:
             if temp_pgpass:

@@ -5,6 +5,7 @@ import re
 import unicodedata
 import warnings
 from binascii import Error as BinasciiError
+from contextlib import suppress
 from email.utils import formatdate
 from urllib.parse import (
     quote, quote_plus, unquote, unquote_plus, urlencode as original_urlencode,
@@ -164,10 +165,8 @@ def parse_http_date_safe(date):
     """
     Same as parse_http_date, but return None if the input is invalid.
     """
-    try:
+    with suppress(Exception):
         return parse_http_date(date)
-    except Exception:
-        pass
 
 
 # Base 36 functions: useful for generating compact URLs
