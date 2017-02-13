@@ -221,12 +221,11 @@ class AtomicTests(TransactionTestCase):
 
     @skipIf(sys.platform.startswith('win'), "Windows doesn't have signals.")
     def test_rollback_on_keyboardinterrupt(self):
-        with suppress(KeyboardInterrupt):
-            with transaction.atomic():
-                Reporter.objects.create(first_name='Tintin')
-                # Send SIGINT (simulate Ctrl-C). One call isn't enough.
-                os.kill(os.getpid(), signal.SIGINT)
-                os.kill(os.getpid(), signal.SIGINT)
+        with suppress(KeyboardInterrupt), transaction.atomic():
+            Reporter.objects.create(first_name='Tintin')
+            # Send SIGINT (simulate Ctrl-C). One call isn't enough.
+            os.kill(os.getpid(), signal.SIGINT)
+            os.kill(os.getpid(), signal.SIGINT)
         self.assertEqual(Reporter.objects.all().count(), 0)
 
 
